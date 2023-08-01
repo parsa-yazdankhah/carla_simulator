@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Created by Parsa Yazdankhah (2023, 1 Aug)
+# Created by Parsa Yazdankhah (2023, Aug)
 
 import glob 
 import os
@@ -38,12 +38,6 @@ def process_data(queue_data, output_folder):
         except queue.Empty:
             continue
 
-def save_image(image, output_folder):
-    print("save_image running ...")
-    if image is not None:
-        timestamp = str(int(time.time() * 1000))
-        filename = os.path.join(output_folder, f'image_{timestamp}.png')
-        image.save_to_disk(filename)
 
 def main(output_folder):
     actor_list = []
@@ -83,10 +77,9 @@ def main(output_folder):
         data_queue = queue.Queue()
         data_thread = threading.Thread(target=process_data, args=(data_queue, output_folder))
         data_thread.start()
-        # image_thread = threading.Thread(target=process_image, args=(image, output_folder))
-        # image_thread.start()
 
-        print("entering while loop")
+        print("Entering while loop")
+        record_time = 60 # Seconds
         time0 = time.time()
         while True:
             # Synchronize the simulation
@@ -96,31 +89,26 @@ def main(output_folder):
             vehicle_location = vehicle.get_location()
             vehicle_velocity = vehicle.get_velocity()
             vehicle_acceleration = vehicle.get_acceleration()
-            # camera_data = camera_rgb.get_last_data()
-            # image = camera_rgb.listen(lambda image: image.frame)
-
+            
             # Put the data into the queue
             data = {
                 'vehicle_location': (vehicle_location.x,vehicle_location.y,vehicle_location.z),
                 'vehicle_velocity': (vehicle_velocity.x,vehicle_velocity.y,vehicle_velocity.z),
                 'vehicle_acceleration': (vehicle_acceleration.x,vehicle_acceleration.y,vehicle_acceleration.z),
-                # 'camera_data': image
             }
             data_queue.put(data)
 
-            # save_image(image, output_folder)
-
             time1 = time.time()
-            if (time1-time0) > 60:
+            if (time1-time0) > record_time:
                 break
         
-        time.sleep(10)
+        time.sleep(5)
 
     finally:
-        print("entering finally part")
+        print("Destroying Actors")
         client.apply_batch([carla.command.DestroyActor(x) for x in actor_list])
         data_thread.join()
-        print("done.")
+        print("Done.")
 
 
 if __name__ == '__main__':
