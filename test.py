@@ -39,6 +39,7 @@ def process_data(queue_data, output_folder):
             continue
 
 def save_image(image, output_folder):
+    print("save_image running ...")
     if image is not None:
         timestamp = str(int(time.time() * 1000))
         filename = os.path.join(output_folder, f'image_{timestamp}.png')
@@ -70,6 +71,7 @@ def main(output_folder):
             carla.Transform(carla.Location(x=1.5, z=2.4)),
             attach_to=vehicle)
         actor_list.append(camera_rgb)
+        print(f'created {camera_rgb.type_id}')
 
         # Create a synchronous mode context
         settings = world.get_settings()
@@ -81,7 +83,10 @@ def main(output_folder):
         data_queue = queue.Queue()
         data_thread = threading.Thread(target=process_data, args=(data_queue, output_folder))
         data_thread.start()
+        # image_thread = threading.Thread(target=process_image, args=(image, output_folder))
+        # image_thread.start()
 
+        print("entering while loop")
         time0 = time.time()
         while True:
             # Synchronize the simulation
@@ -89,26 +94,32 @@ def main(output_folder):
 
             # Get data from the sensors
             vehicle_location = vehicle.get_location()
-            camera_data = camera_rgb.get_last_data()
+            vehicle_velocity = vehicle.get_velocity()
+            vehicle_acceleration = vehicle.get_acceleration()
+            # camera_data = camera_rgb.get_last_data()
+            # image = camera_rgb.listen(lambda image: image.frame)
 
             # Put the data into the queue
             data = {
-                'vehicle_location': vehicle_location,
-                'camera_data': camera_data
+                'vehicle_location': (vehicle_location.x,vehicle_location.y,vehicle_location.z),
+                'vehicle_velocity': (vehicle_velocity.x,vehicle_velocity.y,vehicle_velocity.z),
+                'vehicle_acceleration': (vehicle_acceleration.x,vehicle_acceleration.y,vehicle_acceleration.z),
+                # 'camera_data': image
             }
             data_queue.put(data)
 
-            save_image(camera_data.get('image'), output_folder)
+            # save_image(image, output_folder)
 
             time1 = time.time()
-            if time1-time0 > 60:
+            if (time1-time0) > 60:
                 break
-
+        
+        time.sleep(10)
 
     finally:
+        print("entering finally part")
         client.apply_batch([carla.command.DestroyActor(x) for x in actor_list])
         data_thread.join()
-        world.apply_settings(carla.WorldSettings(synchronous_mode=False))
         print("done.")
 
 
