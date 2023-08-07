@@ -4,7 +4,7 @@ To run the simulator, follow the instructions below:
 2. run `./CarlaUE4.sh` 
 - Some options to improve performance are as follows:
 
-> `./CarlaUE4.sh -prefernvidia -renderOffScreen -quality-level=Low`)
+   `./CarlaUE4.sh -prefernvidia -renderOffScreen -quality-level=Low`
 
 3. Open a new terminal in the source of python script path
 4. run `conda activate [carla_environment]`
