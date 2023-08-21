@@ -24,11 +24,6 @@ from agents.navigation.behavior_agent import BehaviorAgent
 
 def main():
 
-    # time.sleep(3)
-    # # subprocess.run(["python", "manual_control.py", "--sync"])
-    # subprocess.Popen(["python", "manual_control.py", "--sync"])
-    # time.sleep(3)
-
     client = carla.Client('localhost', 2000)
     client.set_timeout(2.0)
     world = client.get_world()
@@ -39,9 +34,16 @@ def main():
     settings.fixed_delta_seconds = 0.1  # Simulation step size in seconds
     world.apply_settings(settings)
 
-    for actor in world.get_actors():
-        if actor.type_id[:7] == "vehicle":
-            ego_vehicle = actor
+    ego_vehicle = None
+    while ego_vehicle is None:
+        print("Waiting for the ego vehicle...")
+        time.sleep(1)
+        possible_vehicles = world.get_actors().filter('vehicle.*')
+        for vehicle in possible_vehicles:
+            if vehicle.attributes['role_name'] == 'hero':
+                print("Ego vehicle found")
+                ego_vehicle = vehicle
+                break
 
     bp = random.choice(world.get_blueprint_library().filter('*vehicle*'))
     transform = random.choice(world.get_map().get_spawn_points())
@@ -52,9 +54,14 @@ def main():
     agent.ignore_traffic_lights(True)
     agent.set_destination(second_vehicle.get_location())
 
+    spectator = world.get_spectator()
+
     while True:
         if agent.done():
             agent.set_destination(second_vehicle.get_location())
+
+        transform = ego_vehicle.get_transform()
+        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=30),carla.Rotation(pitch=-90)))
 
         ego_vehicle.apply_control(agent.run_step())
 
