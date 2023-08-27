@@ -18,8 +18,6 @@ import time
 import threading
 import queue
 import numpy as np
-import subprocess
-from agents.navigation.behavior_agent import BehaviorAgent
 
 
 def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle):
@@ -34,7 +32,6 @@ def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle)
     second_transform = second_vehicle.get_transform()
     second_location = np.array([second_transform.location.x, second_transform.location.y, second_transform.location.z])
     relative_distance = second_location - ego_location
-    distance = ego_vehicle.get_location().distance(second_vehicle.get_location())
 
     refernce_unit_vector = np.array([ego_transform.get_forward_vector().x, ego_transform.get_forward_vector().y, ego_transform.get_forward_vector().z])
 
@@ -43,11 +40,7 @@ def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle)
 
     t = np.linalg.norm(ego_velocity_vector) / 9.81
 
-    # distance = distance - max(
-    #             ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) - max(
-    #             second_vehicle.bounding_box.extent.y, second_vehicle.bounding_box.extent.x)
-
-    if relative_velocity_local < 0 and (relative_distance_local)/abs(relative_velocity_local) < t:
+    if relative_velocity_local < 0 and (relative_distance_local-3)/abs(relative_velocity_local) < t:
         return True
 
 
@@ -73,23 +66,23 @@ def main():
                 print("Ego vehicle found")
                 ego_vehicle = vehicle
                 break
-
+    
     bp = random.choice(world.get_blueprint_library().filter('vehicle.dodge.charger_2020'))
-    transform = random.choice(world.get_map().get_spawn_points())
+    transform = ego_vehicle.get_transform()
+    transform.location.x += 100
     second_vehicle = world.try_spawn_actor(bp, transform)
-    second_vehicle.set_autopilot(True)
-
-    agent = BehaviorAgent(ego_vehicle, behavior='aggressive')
-    agent.ignore_traffic_lights(True)
-    agent.set_destination(second_vehicle.get_location())
 
     spectator = world.get_spectator()
+    second_vehicle_control = second_vehicle.get_control()
     ego_vehicle_control = ego_vehicle.get_control()
 
-    while True:
-        if agent.done():
-            agent.set_destination(second_vehicle.get_location())
+    ego_vehicle_control.throttle = 0.3
+    ego_vehicle.apply_control(ego_vehicle_control)
 
+    second_vehicle_control.throttle = 0.3
+    second_vehicle.apply_control(second_vehicle_control)
+
+    while True:
         transform = ego_vehicle.get_transform()
         spectator.set_transform(carla.Transform(transform.location + carla.Location(z=30),carla.Rotation(pitch=-90)))
 
@@ -97,10 +90,9 @@ def main():
             ego_vehicle_control.throttle = 0.0
             ego_vehicle_control.brake = 1.0
             ego_vehicle.apply_control(ego_vehicle_control)
-        else:
-            ego_vehicle.apply_control(agent.run_step())
+            print("Collision is about to occur !!!!!!")
 
-
+        
 if __name__ == '__main__':
     try:
         main()

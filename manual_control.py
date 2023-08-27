@@ -323,6 +323,11 @@ class World(object):
                 sys.exit(1)
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            spawn_point.location.x = -90
+            spawn_point.location.y = 24.5
+            spawn_point.rotation.roll = 0
+            spawn_point.rotation.pitch = 0
+            spawn_point.rotation.yaw = 0
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
@@ -1390,7 +1395,7 @@ def main():
     argparser.add_argument(
         '--filter',
         metavar='PATTERN',
-        default='vehicle.*',
+        default='vehicle.mercedes.coupe_2020',
         help='actor filter (default: "vehicle.*")')
     argparser.add_argument(
         '--generation',
