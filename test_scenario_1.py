@@ -22,35 +22,6 @@ import subprocess
 from agents.navigation.behavior_agent import BehaviorAgent
 
 
-def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle):
-    ego_velocity = ego_vehicle.get_velocity()
-    ego_velocity_vector = np.array([ego_velocity.x, ego_velocity.y, ego_velocity.z])
-    second_velocity = second_vehicle.get_velocity()
-    second_velocity_vector = np.array([second_velocity.x, second_velocity.y, second_velocity.z])
-    relative_velocity = second_velocity_vector - ego_velocity_vector
-
-    ego_transform = ego_vehicle.get_transform()
-    ego_location = np.array([ego_transform.location.x, ego_transform.location.y, ego_transform.location.z])
-    second_transform = second_vehicle.get_transform()
-    second_location = np.array([second_transform.location.x, second_transform.location.y, second_transform.location.z])
-    relative_distance = second_location - ego_location
-    distance = ego_vehicle.get_location().distance(second_vehicle.get_location())
-
-    refernce_unit_vector = np.array([ego_transform.get_forward_vector().x, ego_transform.get_forward_vector().y, ego_transform.get_forward_vector().z])
-
-    relative_velocity_local = np.dot(relative_velocity, refernce_unit_vector)
-    relative_distance_local = np.dot(relative_distance, refernce_unit_vector)
-
-    t = np.linalg.norm(ego_velocity_vector) / 9.81
-
-    # distance = distance - max(
-    #             ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) - max(
-    #             second_vehicle.bounding_box.extent.y, second_vehicle.bounding_box.extent.x)
-
-    if relative_velocity_local < 0 and (relative_distance_local)/abs(relative_velocity_local) < t:
-        return True
-
-
 def main():
 
     client = carla.Client('localhost', 2000)
@@ -84,7 +55,6 @@ def main():
     agent.set_destination(second_vehicle.get_location())
 
     spectator = world.get_spectator()
-    ego_vehicle_control = ego_vehicle.get_control()
 
     while True:
         if agent.done():
@@ -93,12 +63,7 @@ def main():
         transform = ego_vehicle.get_transform()
         spectator.set_transform(carla.Transform(transform.location + carla.Location(z=30),carla.Rotation(pitch=-90)))
 
-        if colision_detector(ego_vehicle, second_vehicle):
-            ego_vehicle_control.throttle = 0.0
-            ego_vehicle_control.brake = 1.0
-            ego_vehicle.apply_control(ego_vehicle_control)
-        else:
-            ego_vehicle.apply_control(agent.run_step())
+        ego_vehicle.apply_control(agent.run_step())
 
 
 if __name__ == '__main__':
