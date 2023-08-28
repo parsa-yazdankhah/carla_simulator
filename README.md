@@ -28,4 +28,8 @@ To simulate some predefined scenarios of autonomous vehicles, you should follow 
   
    `python test_scenario_1.py`
 
+- Scenario 2: Collision scenario with stationary car
+  
+   `python test_scenario_2.py`
+
 4. If you want some more traffic around, you can easily generate it by running `python generate_traffic.py -n [number_of_vehicles]`
