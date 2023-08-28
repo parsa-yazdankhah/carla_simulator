@@ -28,24 +28,23 @@ def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle)
     relative_velocity = second_velocity_vector - ego_velocity_vector
 
     ego_transform = ego_vehicle.get_transform()
-    ego_location = np.array([ego_transform.location.x, ego_transform.location.y, ego_transform.location.z])
+    ego_location = np.array([ego_transform.location.x, ego_transform.location.y, ego_transform.location.z, 0])
     second_transform = second_vehicle.get_transform()
-    second_location = np.array([second_transform.location.x, second_transform.location.y, second_transform.location.z])
+    second_location = np.array([second_transform.location.x, second_transform.location.y, second_transform.location.z, 1])
     relative_distance = second_location - ego_location
-    distance = ego_vehicle.get_location().distance(second_vehicle.get_location())
 
     refernce_unit_vector = np.array([ego_transform.get_forward_vector().x, ego_transform.get_forward_vector().y, ego_transform.get_forward_vector().z])
-
     relative_velocity_local = np.dot(relative_velocity, refernce_unit_vector)
-    relative_distance_local = np.dot(relative_distance, refernce_unit_vector)
 
+    rotation_matrix = ego_transform.get_inverse_matrix()
+    relative_distance_local = np.dot(relative_distance, rotation_matrix)
+    distance = relative_distance_local[0] - max(ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) \
+                        - max(second_vehicle.bounding_box.extent.y, second_vehicle.bounding_box.extent.x)
+    
     t = np.linalg.norm(ego_velocity_vector) / 9.81
 
-    distance = distance - max(ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) \
-                        - max(second_vehicle.bounding_box.extent.y, second_vehicle.bounding_box.extent.x)
-
     if relative_velocity_local < 0 and (distance)/abs(relative_velocity_local) < t:
-        print(f'time to collision: {t:.4f} sec')
+        print(f'time to stop: {t:.4f} sec')
         return True
 
 
@@ -80,7 +79,6 @@ def main():
         second_vehicle = world.try_spawn_actor(bp, transform)
 
         spectator = world.get_spectator()
-        # second_vehicle_control = second_vehicle.get_control()
         ego_vehicle_control = ego_vehicle.get_control()
 
         ego_vehicle_control.throttle = 1.0
@@ -88,20 +86,15 @@ def main():
         ego_vehicle_control.steer = 0.0
         ego_vehicle.apply_control(ego_vehicle_control)
 
-        # second_vehicle_control.throttle = 0.3
-        # second_vehicle_control.brake = 0.0
-        # second_vehicle_control.steer = 0.0
-        # second_vehicle.apply_control(second_vehicle_control)
-
         while True:
             transform = ego_vehicle.get_transform()
             spectator.set_transform(carla.Transform(transform.location + carla.Location(z=30),carla.Rotation(pitch=-90)))
 
             if colision_detector(ego_vehicle, second_vehicle):
                 ego_vehicle_control.throttle = 0.0
-                ego_vehicle_control.brake = 1.0
+                ego_vehicle_control.brake = 0.7
                 ego_vehicle.apply_control(ego_vehicle_control)
-                print("Collision is about to occur !!!!!!")
+                print("Collision is about to occur !!!")
                 break
 
     finally:
