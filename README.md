@@ -1,4 +1,13 @@
 # CARLA Simulator
+
+<p align="center">
+   <video src="media/carla_test.gif"/>
+</p>
+
+This repository contains comprehensive scripts for CARLA simulator, aimed at evaluating the performance of Forward Collision Warning (FCW) system.
+You can find an extensive description about CARLA simulator and its various capabilities, along with different methods for doing diverse tasks and their results in *test.ipynb* file.
+
+## How to run
 To run the simulator, follow the instructions below:
 1. Open a terminal in the source folder of simulator path
 2. run `./CarlaUE4.sh` 
