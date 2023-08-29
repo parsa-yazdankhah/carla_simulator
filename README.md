@@ -1,7 +1,7 @@
 # CARLA Simulator
 
 <p align="center">
-   <video src="media/carla_test.gif"/>
+   <img src="media/carla_test.gif"/>
 </p>
 
 This repository contains comprehensive scripts for CARLA simulator, aimed at evaluating the performance of Forward Collision Warning (FCW) system.
