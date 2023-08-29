@@ -38,7 +38,7 @@ def colision_detector(ego_vehicle: carla.Vehicle, second_vehicle: carla.Vehicle)
 
     rotation_matrix = ego_transform.get_inverse_matrix()
     relative_distance_local = np.dot(relative_distance, rotation_matrix)
-    distance = relative_distance_local[0] - max(ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) \
+    distance = abs(relative_distance_local[0]) - max(ego_vehicle.bounding_box.extent.y, ego_vehicle.bounding_box.extent.x) \
                         - max(second_vehicle.bounding_box.extent.y, second_vehicle.bounding_box.extent.x)
     
     t = np.linalg.norm(ego_velocity_vector) / 9.81
@@ -74,9 +74,11 @@ def main():
         
         bp = random.choice(world.get_blueprint_library().filter('vehicle.dodge.charger_2020'))
         transform = ego_vehicle.get_transform()
-        transform.location.x += 70
-        transform.location.z += 1
-        second_vehicle = world.try_spawn_actor(bp, transform)
+        forward_vector = transform.get_forward_vector()
+        spawn_location = transform.location + (70.0 * forward_vector)
+        spawn_location.z += 0.1
+        spawn_transform = carla.Transform(spawn_location, transform.rotation)
+        second_vehicle = world.try_spawn_actor(bp, spawn_transform)
 
         spectator = world.get_spectator()
         ego_vehicle_control = ego_vehicle.get_control()
